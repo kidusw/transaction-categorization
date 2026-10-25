@@ -6,10 +6,14 @@ readme = "README.md"
 requires-python = ">=3.12,<3.13"
 dependencies = [
     "alembic>=1.13",
+    "faker>=40.43.0",
+    "kaggle>=2.2.5",
     "pandas>=2.2",
     "pandera>=0.24",
     "psycopg[binary]>=3.2",
+    "pyarrow>=26.0.0",
     "pydantic-settings>=2.4",
+    "rapidfuzz>=3.14.6",
     "sqlalchemy>=2.0.30",
     "typer>=0.12",
 ]

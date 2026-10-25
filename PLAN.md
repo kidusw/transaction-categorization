@@ -23,15 +23,19 @@ metrics, synthetic data labelled synthetic, secrets/data git-ignored).
   creates the 3 tables in Postgres; a sample CSV ingests and invalid rows are rejected with
   a clear report.
 
-## Phase 2 — Data
+## Phase 2 — Data ✅
 
-- [ ] Kaggle download script for a bank-transaction categorization dataset (token from `.env`)
-- [ ] Faker-based synthetic generator for Ethiopian-style descriptions (telebirr airtime,
+- [x] Kaggle download script for a bank-transaction categorization dataset (token from `.env`)
+- [x] Faker-based synthetic generator for Ethiopian-style descriptions (telebirr airtime,
       CBE transfer, Ethio Telecom, mixed Amharic/English), every row `source='synthetic'`
-- [ ] Cleaning: lower-casing, stripping reference numbers/dates, unicode normalisation
-- [ ] Merchant normalisation with rapidfuzz against a canonical merchant list
-- [ ] Unified category taxonomy + mapping from the Kaggle labels
-- **Exit criteria:** `make data` (or equivalent CLI) produces a processed parquet with a
+- [x] Cleaning: lower-casing, stripping reference numbers/dates, unicode normalisation
+- [x] Merchant normalisation with rapidfuzz against a canonical merchant list
+- [x] Unified category taxonomy + mapping from the Kaggle labels
+- Sources chosen: `bukolafatunde/personal-finance` (806 real-format labelled transactions)
+  and `lowlevelexe/malaysian-semantic-transaction-dataset` (32k labelled merchant/keyword
+  phrases, CDLA-Permissive). No large public labelled bank-description dataset exists, so
+  the synthetic Ethiopian set (~33k rows, 30 accounts, 2023-01 → 2025-06) carries volume.
+- **Exit criteria:** `txcat data download && txcat data build` produces a processed parquet with a
   `source` column; tests cover the cleaner, normaliser and generator determinism (seeded).
 
 ## Phase 3 — Models
