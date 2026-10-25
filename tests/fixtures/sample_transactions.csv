@@ -1,0 +1,15 @@
+account_id,date,description,amount,currency,category,source
+ACC-001,2024-01-03,Telebirr airtime top-up 0911xxxxxx,-50.00,ETB,Utilities & Telecom,synthetic
+ACC-001,2024-01-05,CBE transfer to Abebe K. ref FT2401,-1500.00,ETB,Transfers,synthetic
+ACC-001,2024-01-05,Salary - Acme PLC,25000.00,ETB,Income,synthetic
+ACC-001,2024-01-07,  Shoa supermarket  ,-842.35,,Groceries,synthetic
+ACC-001,2024-01-07,Kaldis coffee,-120.00,ETB,,synthetic
+ACC-001,2024-01-07,Kaldis coffee,-120.00,ETB,,synthetic
+ACC-002,2024-02-11,STARBUCKS #1234 SEATTLE,-5.45,USD,Food & Dining,kaggle
+ACC-002,2024-02-12,NETFLIX.COM,-15.49,usd,Entertainment,kaggle
+ACC-002,not-a-date,AMAZON MKTPLACE,-23.10,USD,Shopping,kaggle
+ACC-002,2024-02-14,   ,-10.00,USD,Shopping,kaggle
+ACC-002,2024-02-15,Refund zero,0,USD,Shopping,kaggle
+ACC-002,2024-02-16,Shell oil,-40.00,USD,Transport,scraped
+ACC-002,2099-01-01,Future rent,-1200.00,USD,Housing,kaggle
+ACC-002,2024-02-17,Uber trip,-12.30,US,Transport,kaggle

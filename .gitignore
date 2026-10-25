@@ -1,0 +1,27 @@
+# secrets
+.env
+.env.*
+!.env.example
+kaggle.json
+
+# data & artifacts (reproducible via scripts)
+data/
+mlruns/
+mlartifacts/
+*.parquet
+
+# python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+dist/
+build/
+
+# editors / os
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
