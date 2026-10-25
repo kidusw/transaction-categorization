@@ -5,7 +5,7 @@
 kaggle.json
 
 # data & artifacts (reproducible via scripts)
-data/
+/data/
 mlruns/
 mlartifacts/
 *.parquet

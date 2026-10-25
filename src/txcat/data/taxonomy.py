@@ -1,0 +1,68 @@
+"""Unified category taxonomy and mappings from each source dataset's labels."""
+
+CATEGORIES: dict[str, str] = {
+    "Income": "Salary, payroll, remittances received",
+    "Transfers": "Person-to-person and wallet transfers",
+    "Cash Withdrawal": "ATM and over-the-counter cash",
+    "Loan & Card Payments": "Loan instalments and credit-card repayments",
+    "Housing": "Rent and mortgage",
+    "Utilities": "Electricity, water and similar bills",
+    "Telecom & Airtime": "Airtime, data packages, phone and internet",
+    "Groceries": "Supermarkets and markets",
+    "Dining & Coffee": "Restaurants, cafes, bars, fast food",
+    "Transport & Fuel": "Fuel, ride-hailing, public transport",
+    "Shopping": "Retail, electronics, home improvement",
+    "Entertainment & Subscriptions": "Streaming, TV, cinema, music",
+    "Health & Personal Care": "Hospitals, pharmacies, barbers",
+    "Insurance": "Insurance premiums",
+    "Education": "School and tuition fees",
+    "Travel": "Flights and hotels",
+    "Government & Fees": "Taxes, permits, bank service charges",
+    "Community & Charity": "Iddir, church/mosque giving, donations",
+    "Savings": "Equb and transfers to savings",
+}
+
+# bukolafatunde/personal-finance (US personal transactions export)
+PERSONAL_FINANCE_MAP: dict[str, str] = {
+    "Alcohol & Bars": "Dining & Coffee",
+    "Auto Insurance": "Insurance",
+    "Coffee Shops": "Dining & Coffee",
+    "Credit Card Payment": "Loan & Card Payments",
+    "Electronics & Software": "Shopping",
+    "Entertainment": "Entertainment & Subscriptions",
+    "Fast Food": "Dining & Coffee",
+    "Food & Dining": "Dining & Coffee",
+    "Gas & Fuel": "Transport & Fuel",
+    "Groceries": "Groceries",
+    "Haircut": "Health & Personal Care",
+    "Home Improvement": "Shopping",
+    "Internet": "Telecom & Airtime",
+    "Mobile Phone": "Telecom & Airtime",
+    "Mortgage & Rent": "Housing",
+    "Movies & DVDs": "Entertainment & Subscriptions",
+    "Music": "Entertainment & Subscriptions",
+    "Paycheck": "Income",
+    "Restaurants": "Dining & Coffee",
+    "Shopping": "Shopping",
+    "Television": "Entertainment & Subscriptions",
+    "Utilities": "Utilities",
+}
+
+# lowlevelexe/malaysian-semantic-transaction-dataset (merchant/keyword lexicon)
+SEMANTIC_LEXICON_MAP: dict[str, str] = {
+    "Bills": "Utilities",
+    "Charity": "Community & Charity",
+    "E-wallet": "Transfers",
+    "Education": "Education",
+    "Entertainment": "Entertainment & Subscriptions",
+    "Food & Beverage": "Dining & Coffee",
+    "Government": "Government & Fees",
+    "Groceries": "Groceries",
+    "Healthcare": "Health & Personal Care",
+    "Insurance": "Insurance",
+    "Shopping": "Shopping",
+    "Subscription": "Entertainment & Subscriptions",
+    "Transportation": "Transport & Fuel",
+    "Travel": "Travel",
+    "Utilities": "Utilities",
+}
