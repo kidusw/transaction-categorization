@@ -54,6 +54,22 @@ def ingest(
             typer.echo(f"rejected rows written to {rejects}")
 
 
+@app.command()
+def match(
+    descriptions: Annotated[list[str], typer.Argument(help="One or more raw descriptions.")],
+) -> None:
+    """Show how descriptions are cleaned and which merchant (if any) they map to."""
+    from txcat.data.clean import clean_description
+    from txcat.data.merchants import MerchantNormalizer
+
+    normalizer = MerchantNormalizer()
+    for raw in descriptions:
+        cleaned = clean_description(raw)
+        merchant = normalizer.match(cleaned)
+        found = f"{merchant.name} [{merchant.category}]" if merchant else "no confident match"
+        typer.echo(f"{raw!r}\n  cleaned:  {cleaned!r}\n  merchant: {found}")
+
+
 @data_app.command("download")
 def data_download(
     force: Annotated[bool, typer.Option(help="Re-download even if present.")] = False,

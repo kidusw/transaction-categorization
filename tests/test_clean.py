@@ -32,3 +32,14 @@ def test_nfkc_normalises_full_width_text():
 def test_has_ethiopic():
     assert has_ethiopic("ገንዘብ ማስተላለፍ cbe")
     assert not has_ethiopic("cbe transfer")
+
+
+def test_match_cli_prints_merchant():
+    from typer.testing import CliRunner
+
+    from txcat.cli import app
+
+    result = CliRunner().invoke(app, ["match", "POS Kaldis Coffee FT123ABC"])
+
+    assert result.exit_code == 0
+    assert "Kaldis Coffee [Dining & Coffee]" in result.output

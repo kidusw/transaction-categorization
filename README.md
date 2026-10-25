@@ -18,6 +18,15 @@ uv run txcat data build --load  # synthetic + clean + merchants -> data/processe
 uv run pytest
 ```
 
+Try the cleaning + merchant matching on any description:
+
+```bash
+uv run txcat match "CBE transfer to Abebe K. FT24123ABCD" "ቤት ኪራይ ጥቅምት" "Grocery Store"
+```
+
+(On Windows PowerShell, run `[Console]::OutputEncoding = [Text.Encoding]::UTF8;
+$env:PYTHONIOENCODING = "utf-8"` first so Amharic prints correctly.)
+
 ## Data
 
 | Dataset | Rows | What it is | Used for |
