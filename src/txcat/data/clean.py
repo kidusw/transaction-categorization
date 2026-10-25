@@ -16,8 +16,8 @@ _PATTERNS = [
     re.compile(r"#\s*\d+"),
 ]
 # Keep latin letters/digits, Ethiopic syllables (U+1200-U+137F) and a few joiners.
-_NON_WORD = re.compile(r"[^0-9a-zሀ-ፚᎀ-᎟&'+.-]+")
-_ETHIOPIC_PUNCT = re.compile(r"[፠-፨]")
+_NON_WORD = re.compile(r"[^0-9a-z\u1200-\u135a\u1380-\u139f&'+.-]+")
+_ETHIOPIC_PUNCT = re.compile(r"[\u1360-\u1368]")
 _STRAY = re.compile(r"(?<!\w)[.'+-]+|[.'+-]+(?!\w)")
 _SPACES = re.compile(r"\s+")
 
@@ -38,4 +38,4 @@ def clean_descriptions(descriptions: pd.Series) -> pd.Series:
 
 
 def has_ethiopic(text: str) -> bool:
-    return any("ሀ" <= ch <= "፿" for ch in text)
+    return any("\u1200" <= ch <= "\u137f" for ch in text)

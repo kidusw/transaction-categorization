@@ -19,32 +19,54 @@ class Merchant:
 
 MERCHANTS: tuple[Merchant, ...] = (
     # Telecom & airtime
-    Merchant("Ethio Telecom", "Telecom & Airtime",
-             ("ethio telecom", "ethiotelecom", "ethio tele", "ኢትዮ ቴሌኮም")),
-    Merchant("telebirr Airtime", "Telecom & Airtime",
-             ("telebirr airtime", "telebirr recharge", "telebirr package", "ቴሌብር የአየር ሰዓት")),
-    Merchant("Safaricom Ethiopia", "Telecom & Airtime",
-             ("safaricom", "safaricom et", "m-pesa airtime", "ሳፋሪኮም")),
+    Merchant(
+        "Ethio Telecom",
+        "Telecom & Airtime",
+        ("ethio telecom", "ethiotelecom", "ethio tele", "ኢትዮ ቴሌኮም"),
+    ),
+    Merchant(
+        "telebirr Airtime",
+        "Telecom & Airtime",
+        ("telebirr airtime", "telebirr recharge", "telebirr package", "ቴሌብር የአየር ሰዓት"),
+    ),
+    Merchant(
+        "Safaricom Ethiopia",
+        "Telecom & Airtime",
+        ("safaricom", "safaricom et", "m-pesa airtime", "ሳፋሪኮም"),
+    ),
     # Transfers (channel / bank as counterparty)
-    Merchant("Commercial Bank of Ethiopia", "Transfers",
-             ("cbe", "cbe birr", "commercial bank of ethiopia", "ንግድ ባንክ")),
-    Merchant("telebirr Transfer", "Transfers",
-             ("telebirr send money", "telebirr transfer", "telebirr p2p", "ቴሌብር ገንዘብ")),
+    Merchant(
+        "Commercial Bank of Ethiopia",
+        "Transfers",
+        ("cbe", "cbe birr", "commercial bank of ethiopia", "ንግድ ባንክ"),
+    ),
+    Merchant(
+        "telebirr Transfer",
+        "Transfers",
+        ("telebirr send money", "telebirr transfer", "telebirr p2p", "ቴሌብር ገንዘብ"),
+    ),
     Merchant("Awash Bank", "Transfers", ("awash bank", "awash", "አዋሽ ባንክ")),
     Merchant("Dashen Bank", "Transfers", ("dashen bank", "amole", "ዳሽን ባንክ")),
     Merchant("Bank of Abyssinia", "Transfers", ("bank of abyssinia", "boa", "አቢሲኒያ ባንክ")),
     # Cash
     Merchant("ATM Withdrawal", "Cash Withdrawal", ("atm wdl", "atm withdrawal", "ኤቲኤም")),
     # Loans
-    Merchant("CBE Loan", "Loan & Card Payments",
-             ("cbe loan repayment", "loan instalment", "ብድር ክፍያ")),
-    Merchant("Condominium Loan", "Loan & Card Payments",
-             ("condominium loan", "condo loan", "ኮንዶሚኒየም ብድር")),
+    Merchant(
+        "CBE Loan", "Loan & Card Payments", ("cbe loan repayment", "loan instalment", "ብድር ክፍያ")
+    ),
+    Merchant(
+        "Condominium Loan",
+        "Loan & Card Payments",
+        ("condominium loan", "condo loan", "ኮንዶሚኒየም ብድር"),
+    ),
     # Housing
     Merchant("House Rent", "Housing", ("house rent", "rent payment", "ቤት ኪራይ")),
     # Utilities
-    Merchant("Ethiopian Electric Utility", "Utilities",
-             ("eeu", "ethiopian electric utility", "eeu prepaid", "የመብራት ክፍያ")),
+    Merchant(
+        "Ethiopian Electric Utility",
+        "Utilities",
+        ("eeu", "ethiopian electric utility", "eeu prepaid", "የመብራት ክፍያ"),
+    ),
     Merchant("AAWSA Water", "Utilities", ("aawsa", "aawsa water", "water bill", "የውሃ ክፍያ")),
     # Groceries
     Merchant("Shoa Supermarket", "Groceries", ("shoa supermarket", "shoa", "ሸዋ ሱፐርማርኬት")),
@@ -61,49 +83,77 @@ MERCHANTS: tuple[Merchant, ...] = (
     # Transport & fuel
     Merchant("Ride Taxi", "Transport & Fuel", ("ride taxi", "ride ethiopia", "ራይድ")),
     Merchant("Feres", "Transport & Fuel", ("feres", "feres ride", "ፈረስ")),
-    Merchant("TotalEnergies", "Transport & Fuel",
-             ("totalenergies", "total energies", "total fuel", "ቶታል")),
+    Merchant(
+        "TotalEnergies",
+        "Transport & Fuel",
+        ("totalenergies", "total energies", "total fuel", "ቶታል"),
+    ),
     Merchant("NOC Fuel", "Transport & Fuel", ("noc fuel", "noc station", "ኖክ ነዳጅ")),
     # Shopping
     Merchant("Edna Mall", "Shopping", ("edna mall", "ednamall", "ኤድና ሞል")),
-    Merchant("Friendship City Center", "Shopping",
-             ("friendship city center", "friendship mall")),
+    Merchant("Friendship City Center", "Shopping", ("friendship city center", "friendship mall")),
     Merchant("Merkato", "Shopping", ("merkato", "mercato", "መርካቶ")),
     Merchant("Jiji Ethiopia", "Shopping", ("jiji", "jiji ethiopia")),
     # Entertainment & subscriptions
-    Merchant("DStv", "Entertainment & Subscriptions",
-             ("dstv", "dstv subscription", "multichoice", "ዲኤስቲቪ")),
+    Merchant(
+        "DStv",
+        "Entertainment & Subscriptions",
+        ("dstv", "dstv subscription", "multichoice", "ዲኤስቲቪ"),
+    ),
     Merchant("Canal+ Ethiopia", "Entertainment & Subscriptions", ("canal+", "canal plus")),
     # Health & personal care
-    Merchant("Hallelujah Hospital", "Health & Personal Care",
-             ("hallelujah hospital", "hallelujah gen hospital")),
-    Merchant("Kenema Pharmacy", "Health & Personal Care",
-             ("kenema pharmacy", "kenema", "ቀነማ ፋርማሲ")),
-    Merchant("St. Paul Hospital", "Health & Personal Care",
-             ("st paul hospital", "st. paul hospital", "ቅዱስ ጳውሎስ ሆስፒታል")),
+    Merchant(
+        "Hallelujah Hospital",
+        "Health & Personal Care",
+        ("hallelujah hospital", "hallelujah gen hospital"),
+    ),
+    Merchant(
+        "Kenema Pharmacy", "Health & Personal Care", ("kenema pharmacy", "kenema", "ቀነማ ፋርማሲ")
+    ),
+    Merchant(
+        "St. Paul Hospital",
+        "Health & Personal Care",
+        ("st paul hospital", "st. paul hospital", "ቅዱስ ጳውሎስ ሆስፒታል"),
+    ),
     # Insurance
     Merchant("Nyala Insurance", "Insurance", ("nyala insurance", "nyala ins", "ኒያላ ኢንሹራንስ")),
-    Merchant("Ethiopian Insurance Corporation", "Insurance",
-             ("ethiopian insurance corporation", "eic insurance")),
+    Merchant(
+        "Ethiopian Insurance Corporation",
+        "Insurance",
+        ("ethiopian insurance corporation", "eic insurance"),
+    ),
     # Education
     Merchant("Addis Ababa University", "Education", ("addis ababa university", "aau tuition")),
     Merchant("School Fee", "Education", ("school fee", "school fees", "የትምህርት ቤት ክፍያ")),
     # Travel
-    Merchant("Ethiopian Airlines", "Travel",
-             ("ethiopian airlines", "ethiopian airline", "et airlines", "የኢትዮጵያ አየር መንገድ")),
+    Merchant(
+        "Ethiopian Airlines",
+        "Travel",
+        ("ethiopian airlines", "ethiopian airline", "et airlines", "የኢትዮጵያ አየር መንገድ"),
+    ),
     Merchant("Skylight Hotel", "Travel", ("skylight hotel", "skylight")),
     Merchant("Haile Resort", "Travel", ("haile resort", "haile hotel")),
     # Government & fees
-    Merchant("Ministry of Revenues", "Government & Fees",
-             ("ministry of revenues", "mor tax", "erca tax", "ግብር ክፍያ")),
-    Merchant("Immigration (ICS)", "Government & Fees",
-             ("ics passport", "immigration ics", "passport renewal")),
-    Merchant("Bank Service Charge", "Government & Fees",
-             ("service charge", "sms charge", "የአገልግሎት ክፍያ")),
+    Merchant(
+        "Ministry of Revenues",
+        "Government & Fees",
+        ("ministry of revenues", "mor tax", "erca tax", "ግብር ክፍያ"),
+    ),
+    Merchant(
+        "Immigration (ICS)",
+        "Government & Fees",
+        ("ics passport", "immigration ics", "passport renewal"),
+    ),
+    Merchant(
+        "Bank Service Charge", "Government & Fees", ("service charge", "sms charge", "የአገልግሎት ክፍያ")
+    ),
     # Community & charity
     Merchant("Iddir", "Community & Charity", ("iddir", "edir", "እድር")),
-    Merchant("Church Tithe", "Community & Charity",
-             ("church tithe", "medhanealem church", "አስራት", "ቤተክርስቲያን")),
+    Merchant(
+        "Church Tithe",
+        "Community & Charity",
+        ("church tithe", "medhanealem church", "አስራት", "ቤተክርስቲያን"),
+    ),
     Merchant("Mosque Donation", "Community & Charity", ("mosque donation", "zakat", "መስጊድ")),
     # Savings
     Merchant("Equb", "Savings", ("equb", "ekub", "እቁብ")),

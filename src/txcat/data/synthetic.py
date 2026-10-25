@@ -22,29 +22,86 @@ from faker import Faker
 from txcat.data.catalog import MERCHANTS, Merchant
 
 FIRST_NAMES = (
-    "Abebe", "Almaz", "Bekele", "Bethlehem", "Biniyam", "Dawit", "Eyerusalem", "Eyob",
-    "Fikirte", "Getachew", "Hana", "Henok", "Kidist", "Lemlem", "Liya", "Mekdes", "Meron",
-    "Nahom", "Rahel", "Samuel", "Saron", "Selam", "Tesfaye", "Tigist", "Yonas", "Zewdu",
-    "Hamza", "Amina", "Ahmed", "Fatuma", "Chaltu", "Gemechu", "Lensa", "Tolosa",
+    "Abebe",
+    "Almaz",
+    "Bekele",
+    "Bethlehem",
+    "Biniyam",
+    "Dawit",
+    "Eyerusalem",
+    "Eyob",
+    "Fikirte",
+    "Getachew",
+    "Hana",
+    "Henok",
+    "Kidist",
+    "Lemlem",
+    "Liya",
+    "Mekdes",
+    "Meron",
+    "Nahom",
+    "Rahel",
+    "Samuel",
+    "Saron",
+    "Selam",
+    "Tesfaye",
+    "Tigist",
+    "Yonas",
+    "Zewdu",
+    "Hamza",
+    "Amina",
+    "Ahmed",
+    "Fatuma",
+    "Chaltu",
+    "Gemechu",
+    "Lensa",
+    "Tolosa",
 )
 EMPLOYERS = (
-    "Abay Trading PLC", "Sheba Tech PLC", "Entoto Consulting", "Awash Agro PLC",
-    "Gihon Engineering", "Lalibela Logistics", "Addis Ababa City Admin", "Rift Valley NGO",
+    "Abay Trading PLC",
+    "Sheba Tech PLC",
+    "Entoto Consulting",
+    "Awash Agro PLC",
+    "Gihon Engineering",
+    "Lalibela Logistics",
+    "Addis Ababa City Admin",
+    "Rift Valley NGO",
 )
 BRANCHES = ("bole", "piassa", "megenagna", "kazanchis", "cmc", "sarbet", "4 kilo", "mexico")
-MONTHS_AM = ("መስከረም", "ጥቅምት", "ህዳር", "ታህሳስ", "ጥር", "የካቲት", "መጋቢት", "ሚያዝያ",
-             "ግንቦት", "ሰኔ", "ሐምሌ", "ነሐሴ")
+MONTHS_AM = (
+    "መስከረም",
+    "ጥቅምት",
+    "ህዳር",
+    "ታህሳስ",
+    "ጥር",
+    "የካቲት",
+    "መጋቢት",
+    "ሚያዝያ",
+    "ግንቦት",
+    "ሰኔ",
+    "ሐምሌ",
+    "ነሐሴ",
+)
 
 # Description templates per category. {m}=merchant alias, {name}=counterparty,
 # {ref}=bank reference, {phone}=phone number, {branch}=area, {mon}=month name.
 TEMPLATES: dict[str, tuple[str, ...]] = {
     "Telecom & Airtime": (
-        "{m} {phone}", "{m} airtime {phone}", "{m} recharge", "{m} 1gb weekly package",
-        "{m} የአየር ሰዓት ግዢ", "airtime top-up {m} {ref}", "{m} ካርድ ግዢ",
+        "{m} {phone}",
+        "{m} airtime {phone}",
+        "{m} recharge",
+        "{m} 1gb weekly package",
+        "{m} የአየር ሰዓት ግዢ",
+        "airtime top-up {m} {ref}",
+        "{m} ካርድ ግዢ",
     ),
     "Transfers": (
-        "{m} transfer to {name} {ref}", "{m} trf {name}", "ገንዘብ ማስተላለፍ ለ{name} {m}",
-        "{m} send money {phone}", "{m} p2p {name} {ref}", "transfer from {name} via {m}",
+        "{m} transfer to {name} {ref}",
+        "{m} trf {name}",
+        "ገንዘብ ማስተላለፍ ለ{name} {m}",
+        "{m} send money {phone}",
+        "{m} p2p {name} {ref}",
+        "transfer from {name} via {m}",
     ),
     "Cash Withdrawal": ("{m} {branch} branch", "{m} {ref}", "{m} ገንዘብ ወጪ {branch}"),
     "Loan & Card Payments": ("{m} {ref}", "{m} {mon}", "monthly {m}"),
@@ -62,8 +119,12 @@ TEMPLATES: dict[str, tuple[str, ...]] = {
     "Government & Fees": ("{m} {ref}", "{m} {mon}", "{m}"),
     "Community & Charity": ("{m} {mon}", "{m} monthly contribution", "{m} መዋጮ", "{m}"),
     "Savings": ("{m} {mon}", "{m} contribution {name}", "{m} {ref}"),
-    "Income": ("salary {employer}", "payroll credit {employer} {ref}", "ደመወዝ {employer}",
-               "{employer} salary {mon}"),
+    "Income": (
+        "salary {employer}",
+        "payroll credit {employer} {ref}",
+        "ደመወዝ {employer}",
+        "{employer} salary {mon}",
+    ),
 }
 
 # (median ETB, log-normal sigma) per category for discretionary amounts.
@@ -223,28 +284,64 @@ class SyntheticGenerator:
         month = date(start.year, start.month, 1)
         while month <= end:
             rows.append(
-                self._row(prof, self._on(month, prof.payday), "Income",
-                          self._around(prof.salary, 0.02))
+                self._row(
+                    prof, self._on(month, prof.payday), "Income", self._around(prof.salary, 0.02)
+                )
             )
             if prof.rent:
-                rows.append(self._row(prof, self._on(month, prof.rent_day), "Housing",
-                                      -prof.rent, "House Rent"))
-            rows.append(self._row(prof, self._on(month, 12, 3), "Utilities",
-                                  -self._around(450, 0.35), "Ethiopian Electric Utility"))
-            rows.append(self._row(prof, self._on(month, 18, 3), "Utilities",
-                                  -self._around(180, 0.3), "AAWSA Water"))
+                rows.append(
+                    self._row(
+                        prof, self._on(month, prof.rent_day), "Housing", -prof.rent, "House Rent"
+                    )
+                )
+            rows.append(
+                self._row(
+                    prof,
+                    self._on(month, 12, 3),
+                    "Utilities",
+                    -self._around(450, 0.35),
+                    "Ethiopian Electric Utility",
+                )
+            )
+            rows.append(
+                self._row(
+                    prof,
+                    self._on(month, 18, 3),
+                    "Utilities",
+                    -self._around(180, 0.3),
+                    "AAWSA Water",
+                )
+            )
             if prof.iddir:
-                rows.append(self._row(prof, self._on(month, 3), "Community & Charity",
-                                      -prof.iddir, "Iddir"))
+                rows.append(
+                    self._row(prof, self._on(month, 3), "Community & Charity", -prof.iddir, "Iddir")
+                )
             if prof.equb:
-                rows.append(self._row(prof, self._on(month, prof.payday + 1, 0), "Savings",
-                                      -prof.equb, "Equb"))
+                rows.append(
+                    self._row(
+                        prof, self._on(month, prof.payday + 1, 0), "Savings", -prof.equb, "Equb"
+                    )
+                )
             if prof.loan:
-                rows.append(self._row(prof, self._on(month, 10, 2), "Loan & Card Payments",
-                                      -prof.loan[1], prof.loan[0]))
+                rows.append(
+                    self._row(
+                        prof,
+                        self._on(month, 10, 2),
+                        "Loan & Card Payments",
+                        -prof.loan[1],
+                        prof.loan[0],
+                    )
+                )
             if prof.dstv:
-                rows.append(self._row(prof, self._on(month, 8, 0), "Entertainment & Subscriptions",
-                                      -float(self._choice((700, 1100))), "DStv"))
+                rows.append(
+                    self._row(
+                        prof,
+                        self._on(month, 8, 0),
+                        "Entertainment & Subscriptions",
+                        -float(self._choice((700, 1100))),
+                        "DStv",
+                    )
+                )
             month = (month + timedelta(days=32)).replace(day=1)
         return [r for r in rows if start <= r["date"] <= end]
 
