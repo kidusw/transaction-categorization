@@ -33,6 +33,7 @@ PROCESSED_SCHEMA = pa.DataFrameSchema(
         "source": pa.Column(str, pa.Check.isin(DATA_SOURCES)),
         "dataset": pa.Column(str),
         "is_injected_anomaly": pa.Column(bool),
+        "is_recurring_true": pa.Column("boolean", nullable=True),
         "has_ethiopic": pa.Column(bool),
     },
     strict=False,
@@ -84,6 +85,7 @@ def build_dataset(
 
     df = pd.concat(frames, ignore_index=True)
     df["amount"] = df["amount"].astype(float)
+    df["is_recurring_true"] = df["is_recurring_true"].astype("boolean")
     df["description_clean"] = clean_descriptions(df["description"])
     normalizer = MerchantNormalizer()
     df["merchant"] = normalizer.normalize(df["description_clean"])

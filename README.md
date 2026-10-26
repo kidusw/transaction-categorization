@@ -4,7 +4,7 @@ End-to-end ML project: categorize bank transactions from their descriptions (Eng
 Ethiopian-style mixed Amharic/English), then derive insights such as recurring payments,
 monthly spend by category and anomalies. See [PLAN.md](PLAN.md) for the phased roadmap.
 
-> Work in progress: Phases 1–3 done (ingestion, data, models). Next: insights.
+> Work in progress: Phases 1–4 done (ingestion, data, models, insights). Next: API.
 
 ## Quickstart
 
@@ -26,6 +26,13 @@ on first use, cached in `data/models/fastembed/`):
 uv sync --extra embeddings
 uv run txcat train              # now also trains embed-logreg and embed-lgbm
 uv run mlflow ui --backend-store-uri sqlite:///mlflow.db   # browse runs at :5000
+```
+
+Insights for one account, and the detectors scored against synthetic ground truth:
+
+```bash
+uv run txcat insights show SYN-0003     # recurring payments, monthly spend, anomalies
+uv run txcat insights evaluate          # writes reports/insights_evaluation.md
 ```
 
 Try the cleaning + merchant matching on any description:
@@ -121,3 +128,46 @@ description never appears in training.
 - **Review queue:** the threshold is the lowest confidence at which auto-accepted
   validation predictions reach 97% accuracy *on each source*. Predictions below it go to
   the review queue (Phase 5).
+
+## Insights (Phase 4)
+
+Unsupervised detectors on an account's history (`txcat.insights`). Transactions are
+grouped into **series** per account: counterparty (normalised merchant, falling back to
+category, e.g. salary from an unlisted employer) plus direction (in/out).
+
+- **Recurring payments:** a series with ≥3 occurrences whose median gap matches a period
+  (weekly, biweekly, monthly, quarterly, yearly), ≥75% of gaps within ±25% of it, and a
+  stable amount (MAD/median ≤ 0.35). Reports the typical amount and next expected date.
+- **Monthly spend by category:** spend and income per account, month and category.
+- **Anomaly flag:** robust z-score of log |amount| against the *earlier* transactions in
+  the same series (falling back to the account's category history), so each flag is what
+  a live system would have said on the day. IsolationForest is a comparison model.
+
+**Evaluation.** The synthetic generator records which rows come from each account's
+recurring profile and which amounts were spiked 6–12×. The detectors are unsupervised, so
+settings are tuned on the dev accounts (odd ids) and reported on the held-out accounts
+(even ids). Kaggle rows have no ground truth.
+
+| Detector (held-out accounts) | Slice | Positives | Precision | Recall | F1 |
+|---|---|---|---|---|---|
+| Recurring payments (row level) | all | 2,340 | 0.999 | 0.976 | 0.987 |
+| Anomaly: robust z ≥ 5 | recurring bills | 9 | 1.000 | 1.000 | 1.000 |
+| Anomaly: robust z ≥ 5 | discretionary | 76 | 0.179 | 0.158 | 0.168 |
+| Anomaly: IsolationForest (top 1%) | recurring bills | 9 | 1.000 | 1.000 | 1.000 |
+| Anomaly: IsolationForest (top 1%) | discretionary | 76 | 0.172 | 0.263 | 0.208 |
+
+**How to read this honestly:**
+
+- **Recurring detection works.** It misses ~2% of recurring rows. 93% of those misses are
+  rows where the merchant normaliser found no confident match (typos, unusual aliases),
+  so the row lands in a different series than the rest of its bill.
+- **Anomalies split into two very different problems.** On recurring bills (rent,
+  utilities, iddir) amounts are stable, so a 6–12× spike sits 10–20 robust SDs out and is
+  always caught. Everyday spend in the generator is lognormal with σ 0.6–1.0, so a 6–12×
+  spike is only 2–4 SDs out and looks like a legitimate big purchase. No amount-only
+  detector can separate those well. Signals like merchant novelty, time of day or channel
+  would be needed, and the synthetic data doesn't have them.
+- **IsolationForest doesn't add much.** It trades a little precision for recall on
+  discretionary spend (F1 0.21 vs 0.17). The robust z-score is simpler and explainable
+  ("5.2× your usual amount at this merchant"), so it is the default.
+- Only 85 injected anomalies are in the held-out accounts, so these rates are rough.

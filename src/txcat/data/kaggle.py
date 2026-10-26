@@ -89,6 +89,7 @@ def load_personal_finance(path: Path) -> pd.DataFrame:
             "category": _map_categories(raw["Category"], PERSONAL_FINANCE_MAP, "personal"),
             "merchant_true": None,
             "is_injected_anomaly": False,
+            "is_recurring_true": pd.NA,  # unknown for real data
             "source": "kaggle",
             "dataset": "kaggle_personal_finance",
         }

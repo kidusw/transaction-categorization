@@ -55,11 +55,16 @@ metrics, synthetic data labelled synthetic, secrets/data git-ignored).
 - **Exit criteria:** comparison table of macro-F1 (overall, real vs synthetic slices) in
   the README; best model beats the baseline on the future test slice.
 
-## Phase 4 — Insights
+## Phase 4 — Insights ✅
 
-- [ ] Recurring-payment detector (same merchant, regular interval, stable amount)
-- [ ] Monthly spend by category
-- [ ] Anomaly flag (amount vs. merchant/category history, robust z-score / IsolationForest)
+- [x] Recurring-payment detector (same merchant, regular interval, stable amount)
+- [x] Monthly spend by category
+- [x] Anomaly flag (amount vs. merchant/category history, robust z-score / IsolationForest)
+- [x] Scored against synthetic ground truth (`is_recurring_true`, `is_injected_anomaly`):
+      settings chosen on dev accounts, reported on held-out accounts
+- Result: recurring precision 0.999 / recall 0.976. Anomalies: F1 1.0 on recurring bills,
+  0.17 (z) / 0.21 (IsolationForest) on discretionary spend, where the generator's own
+  amount spread hides 6-12x spikes. See README.
 - **Exit criteria:** unit tests with hand-built histories for each detector.
 
 ## Phase 5 — API (FastAPI)

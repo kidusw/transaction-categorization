@@ -9,7 +9,8 @@ no real customer data is used.
 Each account follows a profile: monthly salary, optional rent/iddir/equb/DStv and
 utilities on a schedule (so recurring-payment detection has something to find), plus
 Poisson-distributed discretionary spending. A small share of rows are amount spikes,
-flagged in `is_injected_anomaly` for evaluating the anomaly detector later.
+flagged in `is_injected_anomaly` for evaluating the anomaly detector; rows from the
+recurring profile are flagged `is_recurring_true` for evaluating the recurring detector.
 """
 
 from dataclasses import dataclass
@@ -270,6 +271,7 @@ class SyntheticGenerator:
             "category": category,
             "merchant_true": merchant.name if merchant else prof.employer,
             "is_injected_anomaly": False,
+            "is_recurring_true": False,
         }
 
     def _on(self, month: date, day_of_month: int, jitter: int = 1) -> date:
@@ -343,6 +345,8 @@ class SyntheticGenerator:
                     )
                 )
             month = (month + timedelta(days=32)).replace(day=1)
+        for r in rows:
+            r["is_recurring_true"] = True  # ground truth for the recurring-payment detector
         return [r for r in rows if start <= r["date"] <= end]
 
     def _discretionary(self, prof: AccountProfile, start: date, end: date) -> list[dict]:
