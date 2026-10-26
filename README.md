@@ -80,9 +80,9 @@ TXCAT_CA_BUNDLE=/path/to/ca-bundle.pem docker compose up --build
 
 | Image | Contents | Size |
 |---|---|---|
-| `txcat-api` | FastAPI, scikit-learn, skops, SQLAlchemy (no MLflow) | 1.31 GB |
-| `txcat-dashboard` | Streamlit + httpx | 2.05 GB |
-| `txcat-bootstrap` | + MLflow, LightGBM, Pandera, Kaggle, Faker (runs once) | 2.45 GB |
+| `txcat-api` | FastAPI, scikit-learn, skops, SQLAlchemy (no MLflow) | 871 MB |
+| `txcat-dashboard` | Streamlit + httpx | 861 MB |
+| `txcat-bootstrap` | + MLflow, LightGBM, Pandera, Kaggle, Faker (runs once) | 1.48 GB |
 
 ## Develop locally
 
