@@ -38,14 +38,20 @@ metrics, synthetic data labelled synthetic, secrets/data git-ignored).
 - **Exit criteria:** `txcat data download && txcat data build` produces a processed parquet with a
   `source` column; tests cover the cleaner, normaliser and generator determinism (seeded).
 
-## Phase 3 — Models
+## Phase 3 — Models ✅
 
-- [ ] Time-based train/validation/test split
-- [ ] Rule/keyword baseline
-- [ ] TF-IDF (word + char n-grams) + Logistic Regression
-- [ ] Multilingual sentence-transformer embeddings + LogReg / LightGBM
-- [ ] All runs logged to MLflow (params, macro-F1, per-class report, confusion matrix);
-      best model registered
+- [x] Time-based train/validation/test split (per source: 70/15/15 by date)
+- [x] Rule/keyword baseline (merchant catalog + English/Amharic keyword rules)
+- [x] TF-IDF (word + char_wb 2-5 n-grams) + Logistic Regression, with/without lexicon
+- [x] Multilingual sentence embeddings + LogReg / LightGBM. Uses fastembed (ONNX Runtime,
+      quantized paraphrase-multilingual-MiniLM-L12-v2, ~240 MB) instead of PyTorch +
+      sentence-transformers to avoid a 1-2 GB download; optional `embeddings` extra
+- [x] All runs logged to MLflow (params, macro-F1 + per-class F1 per slice, confusion
+      matrix, threshold); best model registered as `txcat-categorizer@champion`
+- [x] Confidence threshold for the review queue, chosen on validation per source
+- Result: `tfidf-logreg-lexicon` wins, with Kaggle test macro-F1 0.991 vs 0.915 for the
+  baseline and 0.996 vs 0.920 on unseen text. Embeddings underperform TF-IDF on unseen
+  text (0.92-0.96). See README.
 - **Exit criteria:** comparison table of macro-F1 (overall, real vs synthetic slices) in
   the README; best model beats the baseline on the future test slice.
 

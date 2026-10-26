@@ -12,6 +12,7 @@ class Settings(BaseSettings):
     database_url: str = "postgresql+psycopg://txcat:txcat@localhost:5433/txcat"
     test_database_url: str | None = None
     kaggle_api_token: SecretStr | None = None
+    mlflow_tracking_uri: str = "sqlite:///mlflow.db"
 
 
 @lru_cache

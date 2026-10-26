@@ -8,6 +8,7 @@ kaggle.json
 /data/
 mlruns/
 mlartifacts/
+mlflow.db
 *.parquet
 
 # python
