@@ -20,7 +20,6 @@ from pathlib import Path
 import mlflow
 import numpy as np
 import pandas as pd
-from lightgbm import LGBMClassifier
 from sklearn.base import BaseEstimator
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import confusion_matrix
@@ -73,6 +72,10 @@ def _embed_logreg(C: float = 4.0, model_name: str = DEFAULT_MODEL) -> Pipeline:
 
 
 def _embed_lgbm(num_leaves: int = 31, model_name: str = DEFAULT_MODEL) -> Pipeline:
+    # Imported here: LightGBM needs the OpenMP runtime (libgomp), which the slim Docker
+    # images don't ship, and only this optional embedding model uses it.
+    from lightgbm import LGBMClassifier
+
     return Pipeline(
         [
             ("features", embedding_features(model_name)),
