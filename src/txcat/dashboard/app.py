@@ -8,6 +8,7 @@ import pandas as pd
 import streamlit as st
 
 from txcat.dashboard.client import ApiClient, ApiError
+from txcat.dashboard.tables import comparison_table
 
 st.set_page_config(page_title="txcat", page_icon="💳", layout="wide")
 
@@ -212,20 +213,15 @@ def page_model(api: ApiClient) -> None:
         "validation; the table shows the future **test** slice. *Unseen text* = test rows "
         "whose description never appeared in training, the most honest column."
     )
-    comparison = pd.DataFrame(model["comparison"])
+    comparison = comparison_table(model["comparison"])
     if comparison.empty:
         st.info("No comparison table shipped with this model.")
         return
-    shown = [
-        "model", "test macro-F1 (synthetic)", "test macro-F1 (kaggle)",
-        "test macro-F1 (unseen text)", "threshold", "auto-accept coverage",
-        "auto-accept accuracy",
-    ]  # fmt: skip
-    numeric = [c for c in shown[1:] if c in comparison]
+    f1_columns = [c for c in comparison.columns if c.startswith("test macro-F1")]
     st.dataframe(
-        comparison[[c for c in shown if c in comparison]]
-        .style.format("{:.3f}", subset=numeric)
-        .highlight_max(subset=[c for c in shown[1:4] if c in comparison], color="#c8e6c9"),
+        comparison.style.format("{:.3f}", subset=list(comparison.columns[1:])).highlight_max(
+            subset=f1_columns, color="#c8e6c9"
+        ),
         hide_index=True,
     )
     st.caption(

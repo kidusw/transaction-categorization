@@ -19,3 +19,18 @@ def test_dashboard_renders_error_when_api_is_down(monkeypatch):
         "Review queue",
         "Model",
     ]
+
+
+def test_comparison_table_drops_empty_kaggle_columns():
+    from txcat.dashboard.tables import comparison_table
+
+    rows = [
+        {"model": "rule-baseline", "test macro-F1 (synthetic)": 0.988,
+         "test macro-F1 (kaggle)": None, "threshold": 0.2, "extra": 1},
+        {"model": "tfidf-logreg", "test macro-F1 (synthetic)": 1.0,
+         "test macro-F1 (kaggle)": None, "threshold": 0.225, "extra": 2},
+    ]  # fmt: skip
+    table = comparison_table(rows)
+    assert list(table.columns) == ["model", "test macro-F1 (synthetic)", "threshold"]
+    assert table["threshold"].dtype == float
+    assert comparison_table([]).empty
