@@ -1,3 +1,12 @@
+# `docker compose up` on a fresh clone: Postgres, a one-shot bootstrap (migrate, build the
+# synthetic data, load it, train, export the model), then the API and the dashboard.
+#   dashboard  http://localhost:8501
+#   API docs   http://localhost:8000/docs
+
+x-build: &build
+  context: .
+  secrets: [ca_bundle]
+
 services:
   db:
     image: postgres:16-alpine
@@ -16,13 +25,30 @@ services:
       timeout: 3s
       retries: 10
 
-  api:
+  bootstrap:
     build:
-      context: .
-      secrets: [ca_bundle]
+      <<: *build
+      args:
+        SYNC_ARGS: --no-default-groups --group train
+    image: txcat-bootstrap
+    command: ["txcat", "bootstrap"]
     environment:
       DATABASE_URL: postgresql+psycopg://txcat:txcat@db:5432/txcat
-      # Exported with `uv run txcat export-model` (writes ./models/champion)
+      MLFLOW_TRACKING_URI: sqlite:////app/data/mlflow.db
+      # Optional: export KAGGLE_API_TOKEN before `docker compose up` to add the Kaggle data
+      KAGGLE_API_TOKEN: ${KAGGLE_API_TOKEN:-}
+    volumes:
+      - txcat-data:/app/data
+      - ./models:/app/models
+    depends_on:
+      db:
+        condition: service_healthy
+
+  api:
+    build: *build
+    image: txcat-api
+    environment:
+      DATABASE_URL: postgresql+psycopg://txcat:txcat@db:5432/txcat
       MODEL_URI: /app/models/champion
     volumes:
       - ./models:/app/models:ro
@@ -31,13 +57,38 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      bootstrap:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
+  dashboard:
+    build:
+      <<: *build
+      args:
+        SYNC_ARGS: --only-group dashboard
+    image: txcat-dashboard
+    command:
+      ["streamlit", "run", "src/txcat/dashboard/app.py", "--server.address=0.0.0.0",
+       "--server.port=8501", "--server.headless=true", "--browser.gatherUsageStats=false"]
+    environment:
+      TXCAT_API_URL: http://api:8000
+    ports:
+      - "8501:8501"
+    depends_on:
+      api:
+        condition: service_healthy
 
 volumes:
   pgdata:
+  txcat-data:
 
 secrets:
   # Optional extra CA bundle for TLS-intercepting networks, e.g.
-  #   TXCAT_CA_BUNDLE=C:/path/to/corporate-bundle.pem docker compose build api
+  #   TXCAT_CA_BUNDLE=C:/path/to/corporate-bundle.pem docker compose up --build
   # The default is an empty file, which the Dockerfile ignores.
   ca_bundle:
     file: ${TXCAT_CA_BUNDLE:-./docker/no-extra-ca.pem}

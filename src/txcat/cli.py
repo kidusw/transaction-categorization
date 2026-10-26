@@ -1,11 +1,11 @@
 from pathlib import Path
-from typing import Annotated
+from typing import TYPE_CHECKING, Annotated
 
 import pandas as pd
 import typer
 
-from txcat.db import get_engine, session_scope
-from txcat.ingest import IngestionError, ValidationResult, load_transactions, validate_transactions
+if TYPE_CHECKING:
+    from txcat.ingest import ValidationResult
 
 app = typer.Typer(help="Transaction categorization toolkit.", no_args_is_help=True)
 data_app = typer.Typer(help="Download and build datasets.", no_args_is_help=True)
@@ -24,7 +24,10 @@ def main() -> None:
     """txcat command-line interface."""
 
 
-def _load(result: ValidationResult) -> None:
+def _load(result: "ValidationResult") -> None:
+    from txcat.db import get_engine, session_scope
+    from txcat.ingest import load_transactions
+
     with session_scope(get_engine()) as session:
         report = load_transactions(session, result.valid)
     typer.echo(
@@ -43,6 +46,8 @@ def ingest(
     default_currency: Annotated[str, typer.Option(help="Currency for rows without one.")] = "ETB",
 ) -> None:
     """Validate a CSV and load the valid rows into the database."""
+    from txcat.ingest import IngestionError, validate_transactions
+
     try:
         result = validate_transactions(pd.read_csv(path, dtype=str), default_currency)
     except IngestionError as exc:
@@ -126,7 +131,71 @@ def train(
             + "\n",
             encoding="utf-8",
         )
-        typer.echo(f"wrote {report}")
+        # Machine-readable copy: shipped with the exported model for the dashboard.
+        report.with_suffix(".json").write_text(
+            table.to_json(orient="records", indent=2), encoding="utf-8"
+        )
+        typer.echo(f"wrote {report} (+ .json)")
+
+
+@app.command()
+def bootstrap(
+    out: Annotated[Path, typer.Option(help="Where to export the served model.")] = Path(
+        "models/champion"
+    ),
+) -> None:
+    """One-shot setup for a fresh environment: migrate, build + load data, train, export.
+
+    Idempotent: each step is skipped when its result already exists. `docker compose up`
+    runs this before starting the API, so a fresh clone works with no manual steps.
+    Without KAGGLE_API_TOKEN only the synthetic data is used.
+    """
+    from alembic import command
+    from alembic.config import Config
+    from sqlalchemy import func, select
+
+    from txcat.config import get_settings
+    from txcat.db import Transaction, get_engine
+    from txcat.models.train import REGISTERED_MODEL
+
+    settings = get_settings()
+    typer.secho("1/4 migrate database", bold=True)
+    command.upgrade(Config("alembic.ini"), "head")
+
+    processed = PROCESSED_DIR / "transactions.parquet"
+    if processed.exists():
+        typer.secho("2/4 data: already built", bold=True)
+    else:
+        typer.secho("2/4 data: download (if a Kaggle token is set) + build", bold=True)
+        token = settings.kaggle_api_token
+        if token and token.get_secret_value():
+            try:
+                data_download(force=False)
+            except (typer.Exit, Exception):
+                typer.secho("Kaggle download failed: continuing with synthetic data only")
+        data_build(n_accounts=30, seed=42, load=False)
+
+    with get_engine().connect() as conn:
+        stored = conn.execute(select(func.count(Transaction.id))).scalar_one()
+    if stored:
+        typer.secho(f"3/4 load: {stored} transactions already in the database", bold=True)
+    else:
+        typer.secho("3/4 load transactions into the database", bold=True)
+        from txcat.data.build import INGEST_COLUMNS
+        from txcat.ingest import validate_transactions
+
+        df = pd.read_parquet(processed)
+        _load(validate_transactions(df[INGEST_COLUMNS].astype({"date": str, "amount": str})))
+
+    if out.exists():
+        typer.secho(f"4/4 model: {out} already exported", bold=True)
+        return
+    typer.secho("4/4 train baseline + TF-IDF, register, export", bold=True)
+    names = ["rule-baseline", "tfidf-logreg"]
+    if (PROCESSED_DIR / "lexicon.parquet").exists():
+        names.append("tfidf-logreg-lexicon")
+    train(models=names, register=True, report=Path("reports/model_comparison.md"))
+    export_model(out=out, model_uri=f"models:/{REGISTERED_MODEL}@champion")
 
 
 @app.command("export-model")
@@ -250,4 +319,6 @@ def data_build(
     for path in report.outputs:
         typer.echo(f"wrote {path}")
     if load:
+        from txcat.ingest import validate_transactions
+
         _load(validate_transactions(df[INGEST_COLUMNS].astype({"date": str, "amount": str})))

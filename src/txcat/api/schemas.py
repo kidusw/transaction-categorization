@@ -110,3 +110,20 @@ class HealthResponse(BaseModel):
     model_version: str | None
     threshold: float | None
     database: Literal["ok", "unavailable"]
+
+
+class AccountOut(BaseModel):
+    account_id: str
+    transactions: int
+    first_date: dt.date
+    last_date: dt.date
+
+
+class ModelInfo(BaseModel):
+    model_name: str
+    model_version: str
+    threshold: float
+    categories: list[str]
+    comparison: list[dict] = Field(
+        description="Phase 3 model comparison on the future test slice (from training)."
+    )

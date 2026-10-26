@@ -80,9 +80,9 @@ metrics, synthetic data labelled synthetic, secrets/data git-ignored).
 
 ## Phase 6 — Ship
 
-- [ ] Streamlit dashboard (upload/categorize, insights, review queue)
-- [ ] README with architecture diagram, results table, how to run
-- [ ] MODEL_CARD.md (data, metrics, limitations, synthetic-data disclosure)
+- [x] Streamlit dashboard (insights, try-it/upload, review queue, model page), API-only client
+- [x] README with architecture diagram, results table, how to run, screenshots
+- [x] MODEL_CARD.md (data, metrics, limitations, synthetic-data disclosure)
 - [ ] Dockerfile + `docker compose up` brings up db, api, dashboard, mlflow
 - **Exit criteria:** fresh clone → `docker compose up` → dashboard works end-to-end;
   CI green.

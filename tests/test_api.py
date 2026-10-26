@@ -12,7 +12,8 @@ from txcat.api.predictor import METADATA_FILE, Predictor, load_predictor
 from txcat.data.synthetic import SyntheticGenerator
 from txcat.db import Base
 from txcat.ingest import load_transactions, validate_transactions
-from txcat.models.train import SKOPS_TRUSTED_TYPES, _tfidf_logreg
+from txcat.models.serialization import SKOPS_TRUSTED_TYPES
+from txcat.models.train import _tfidf_logreg
 
 TRAIN = [
     ("shoa supermarket", -800.0, "Groceries"),
@@ -123,8 +124,8 @@ def test_categorize_validates_input(client):
     assert client.post("/categorize", json=too_many).status_code == 422
 
 
-def test_account_insights(client, engine):
-    df = SyntheticGenerator(3).generate(n_accounts=1)
+def _seed(engine, n_accounts: int = 1) -> pd.DataFrame:
+    df = SyntheticGenerator(3).generate(n_accounts=n_accounts)
     valid = validate_transactions(
         df[
             ["account_id", "date", "description", "amount", "currency", "category", "source"]
@@ -133,6 +134,49 @@ def test_account_insights(client, engine):
     with Session(engine) as session:
         load_transactions(session, valid)
         session.commit()
+    return valid
+
+
+def test_list_accounts(client, engine):
+    assert client.get("/accounts").json() == []
+    valid = _seed(engine, n_accounts=2)
+    accounts = client.get("/accounts").json()
+    assert [a["account_id"] for a in accounts] == ["SYN-0001", "SYN-0002"]
+    assert sum(a["transactions"] for a in accounts) == len(valid)
+
+
+def test_model_info(client, predictor):
+    body = client.get("/model").json()
+    assert body["model_version"] == "txcat-categorizer/test"
+    assert body["threshold"] == 0.6
+    assert set(body["categories"]) == {"Groceries", "Telecom & Airtime", "Income"}
+    assert body["comparison"] == []
+
+
+def test_dashboard_client_against_api(client, engine):
+    from txcat.dashboard.client import ApiClient, ApiError
+
+    api = ApiClient(http=client)
+    _seed(engine)
+    assert api.health()["status"] == "ok"
+    assert api.accounts()[0]["account_id"] == "SYN-0001"
+    assert api.insights("SYN-0001", months=3)["recurring"]
+    pred = api.categorize([{"description": "zzz unknown", "amount": -5}])["predictions"][0]
+    assert api.review_queue()[0]["id"] == pred["review_id"]
+    assert api.review(pred["review_id"], "Shopping")["status"] == "reviewed"
+    with pytest.raises(ApiError, match="404"):
+        api.insights("NOPE")
+
+
+def test_dashboard_client_unreachable():
+    from txcat.dashboard.client import ApiClient, ApiError
+
+    with pytest.raises(ApiError, match="cannot reach"):
+        ApiClient("http://127.0.0.1:9", timeout=1).health()
+
+
+def test_account_insights(client, engine):
+    valid = _seed(engine)
 
     response = client.get("/accounts/SYN-0001/insights", params={"months": 2, "anomalies": 3})
     assert response.status_code == 200
@@ -161,6 +205,6 @@ def test_load_predictor_from_exported_directory(tmp_path, predictor):
             {"name": "txcat-categorizer", "version": "txcat-categorizer/7", "threshold": 0.4}
         )
     )
-    loaded = load_predictor(str(out))
+    loaded = load_predictor(str(out))  # skops only, no MLflow
     assert (loaded.version, loaded.threshold) == ("txcat-categorizer/7", 0.4)
     assert loaded.predict(["shoa supermarket"], [-10.0])["category"].iat[0] == "Groceries"

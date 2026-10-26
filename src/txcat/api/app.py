@@ -13,16 +13,18 @@ from typing import Annotated
 
 import pandas as pd
 from fastapi import Depends, FastAPI, HTTPException, Query, Request
-from sqlalchemy import Engine, select, text
+from sqlalchemy import Engine, func, select, text
 from sqlalchemy.orm import Session, sessionmaker
 
 from txcat.api.predictor import Predictor, load_predictor
 from txcat.api.schemas import (
+    AccountOut,
     AnomalyOut,
     CategorizeRequest,
     CategorizeResponse,
     HealthResponse,
     InsightsResponse,
+    ModelInfo,
     MonthlySpendOut,
     Prediction,
     RecurringOut,
@@ -100,6 +102,36 @@ def _register_routes(app: FastAPI) -> None:
             threshold=predictor.threshold if predictor else None,
             database=database,
         )
+
+    @app.get("/model", response_model=ModelInfo, tags=["ops"])
+    def model_info(predictor: PredictorDep) -> ModelInfo:
+        """The served model, its review threshold and the training-time model comparison."""
+        return ModelInfo(
+            model_name=predictor.name,
+            model_version=predictor.version,
+            threshold=predictor.threshold,
+            categories=[str(c) for c in predictor.model.classes_],
+            comparison=predictor.comparison,
+        )
+
+    @app.get("/accounts", response_model=list[AccountOut], tags=["insights"])
+    def list_accounts(session: SessionDep) -> list[AccountOut]:
+        """Accounts with stored transactions (for the dashboard's account picker)."""
+        query = (
+            select(
+                Account.external_id,
+                func.count(Transaction.id),
+                func.min(Transaction.txn_date),
+                func.max(Transaction.txn_date),
+            )
+            .join(Transaction, Transaction.account_id == Account.id)
+            .group_by(Account.external_id)
+            .order_by(Account.external_id)
+        )
+        return [
+            AccountOut(account_id=a, transactions=n, first_date=first, last_date=last)
+            for a, n, first, last in session.execute(query)
+        ]
 
     @app.post("/categorize", response_model=CategorizeResponse, tags=["categorize"])
     def categorize(

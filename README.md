@@ -1,21 +1,101 @@
 # Transaction Categorization & Financial Insights
 
-End-to-end ML project: categorize bank transactions from their descriptions (English and
-Ethiopian-style mixed Amharic/English), then derive insights such as recurring payments,
-monthly spend by category and anomalies. See [PLAN.md](PLAN.md) for the phased roadmap.
+[![CI](https://github.com/kidusw/transaction-categorization/actions/workflows/ci.yml/badge.svg)](https://github.com/kidusw/transaction-categorization/actions/workflows/ci.yml)
 
-> Work in progress: Phases 1–5 done (ingestion, data, models, insights, API). Next: dashboard + ship.
+An end-to-end ML system that reads raw bank-statement lines, in English and
+Ethiopian-style mixed Amharic/English (`TELEBIRR AIRTIME FT24123ABCD`, `ቤት ኪራይ ጥቅምት`),
+and turns them into categories and insights: recurring payments with their next due
+date, monthly spend by category, and unusual transactions. Low-confidence predictions go
+to a human review queue, and the corrections become training data.
 
-## Quickstart
+**Stack:** Python 3.12 · PostgreSQL 16 · SQLAlchemy/Alembic · Pandera · scikit-learn ·
+LightGBM · fastembed (ONNX) · MLflow · FastAPI · Streamlit · Docker Compose · GitHub Actions
+
+![Dashboard: account insights](docs/screenshots/insights.png)
+
+## At a glance
+
+| | |
+|---|---|
+| **Data** | 33k synthetic Ethiopian-style transactions (always tagged `source='synthetic'`), 806 real-format Kaggle transactions, 32k Kaggle merchant phrases |
+| **Best model** | Word + character n-gram TF-IDF + logistic regression: **0.991 macro-F1** on the future Kaggle slice (rule baseline 0.915) and **0.996** on never-seen descriptions (baseline 0.920) |
+| **Evaluation** | Time-based split per source; threshold and hyperparameters picked on validation; separate synthetic / real / unseen-text numbers |
+| **Review queue** | Threshold where auto-accepted predictions are ≥97% accurate on each source; 99.9% of test rows are auto-accepted |
+| **Insights** | Recurring payments: precision 0.999 / recall 0.976. Anomalies: caught reliably on bills, weak on everyday spend (explained [below](#insights-phase-4)) |
+| **Serving** | FastAPI with batch categorization, insights and a review queue; Streamlit dashboard on top of it |
+
+See [MODEL_CARD.md](MODEL_CARD.md) for intended use and limitations, and [PLAN.md](PLAN.md)
+for the phased build.
+
+## Architecture
+
+```mermaid
+flowchart LR
+    subgraph offline["Offline: bootstrap / txcat CLI"]
+        K[Kaggle datasets] --> B[data build<br/>clean · merchants · taxonomy]
+        S[Synthetic generator<br/>source=synthetic] --> B
+        B --> P[(processed parquet)]
+        P --> T[txcat train<br/>time-based split]
+        T --> M[(MLflow runs +<br/>registry @champion)]
+        M --> E[txcat export-model<br/>skops + metadata]
+    end
+    P -->|ingest| DB[(PostgreSQL<br/>transactions · review_queue)]
+    E --> API[FastAPI<br/>/categorize · /insights · /review]
+    DB <--> API
+    API --> D[Streamlit dashboard]
+    U[Reviewer] --> D
+```
+
+- The API image has no MLflow or training libraries. It loads the exported skops model
+  (an allow-listed format, unlike pickle) plus a small JSON sidecar with the version,
+  review threshold and model comparison.
+- The dashboard only talks to the API over HTTP, so it shows exactly what an API client
+  would get.
+
+## Run it
+
+```bash
+docker compose up --build
+```
+
+On a fresh clone this starts Postgres, then runs a one-shot **bootstrap** container
+(migrate → generate the synthetic data → load it → train baseline + TF-IDF → register in
+MLflow → export the model to `./models/champion`), then the API and the dashboard:
+
+- Dashboard: <http://localhost:8501>
+- API docs: <http://localhost:8000/docs>
+
+Each bootstrap step is skipped when its output already exists, so later `up`s start in
+seconds. Set `KAGGLE_API_TOKEN` in your shell first to include the Kaggle data; without
+it, only the synthetic data is used.
+
+On a network that intercepts HTTPS (a corporate proxy), the dependency download inside
+the build fails with `invalid peer certificate: UnknownIssuer`. Point `TXCAT_CA_BUNDLE`
+at a PEM bundle that includes the proxy's root CA. It is passed as a BuildKit secret, only
+mounted during `uv sync`, and never copied into the images or the repo:
+
+```bash
+TXCAT_CA_BUNDLE=/path/to/ca-bundle.pem docker compose up --build
+```
+
+| Image | Contents | Size |
+|---|---|---|
+| `txcat-api` | FastAPI, scikit-learn, skops, SQLAlchemy (no MLflow) | 1.31 GB |
+| `txcat-dashboard` | Streamlit + httpx | 2.05 GB |
+| `txcat-bootstrap` | + MLflow, LightGBM, Pandera, Kaggle, Faker (runs once) | 2.45 GB |
+
+## Develop locally
 
 ```bash
 cp .env.example .env            # fill in values; .env is git-ignored
 docker compose up -d db         # PostgreSQL 16 on localhost:5433
-uv sync
+uv sync                         # all groups: core, train, dashboard, dev
 uv run alembic upgrade head     # create tables
 uv run txcat data download      # Kaggle sources -> data/raw/kaggle/ (needs KAGGLE_API_TOKEN)
 uv run txcat data build --load  # synthetic + clean + merchants -> data/processed/, and Postgres
-uv run txcat train              # baseline + TF-IDF models, logged to MLflow (mlflow.db)
+uv run txcat train              # models -> MLflow (mlflow.db), best one registered
+uv run uvicorn txcat.api.app:app --reload          # API on :8000
+uv run streamlit run src/txcat/dashboard/app.py    # dashboard on :8501
 uv run pytest
 ```
 
@@ -28,21 +108,29 @@ uv run txcat train              # now also trains embed-logreg and embed-lgbm
 uv run mlflow ui --backend-store-uri sqlite:///mlflow.db   # browse runs at :5000
 ```
 
-Insights for one account, and the detectors scored against synthetic ground truth:
+Command-line insights, and the detectors scored against synthetic ground truth:
 
 ```bash
 uv run txcat insights show SYN-0003     # recurring payments, monthly spend, anomalies
 uv run txcat insights evaluate          # writes reports/insights_evaluation.md
-```
-
-Try the cleaning + merchant matching on any description:
-
-```bash
-uv run txcat match "CBE transfer to Abebe K. FT24123ABCD" "ቤት ኪራይ ጥቅምት" "Grocery Store"
+uv run txcat match "CBE transfer to Abebe K. FT24123ABCD" "ቤት ኪራይ ጥቅምት"
 ```
 
 (On Windows PowerShell, run `[Console]::OutputEncoding = [Text.Encoding]::UTF8;
 $env:PYTHONIOENCODING = "utf-8"` first so Amharic prints correctly.)
+
+## Dashboard
+
+| Page | What it shows |
+|---|---|
+| Account insights | Account picker; recurring payments with next due date; monthly spend by category (stacked bars); unusual transactions |
+| Try it | Paste or upload descriptions → category, confidence, merchant; low-confidence rows go to the review queue |
+| Review queue | Correct the category of queued predictions; recently reviewed items |
+| Model | Served model version, review threshold and the Phase 3 comparison table |
+
+![Try it](docs/screenshots/try-it.png)
+![Review queue](docs/screenshots/review.png)
+![Model page](docs/screenshots/model.png)
 
 ## Data
 
@@ -174,31 +262,11 @@ settings are tuned on the dev accounts (odd ids) and reported on the held-out ac
 
 ## API (Phase 5)
 
-FastAPI service (`txcat.api`). It loads `txcat-categorizer@champion` from the MLflow
-registry, with the review threshold stored as a version tag, and stores the review queue
-in Postgres.
-
-```bash
-uv run alembic upgrade head                      # adds the review_queue table
-uv run uvicorn txcat.api.app:app --reload        # http://127.0.0.1:8000/docs
-```
-
-Or in Docker, serving a portable copy of the model (the local MLflow store records
-absolute host paths, which don't exist inside a container):
-
-```bash
-uv run txcat export-model                        # registry -> ./models/champion (git-ignored)
-docker compose up --build api                    # db + api on http://localhost:8000
-```
-
-On a network that intercepts HTTPS (corporate proxy), the dependency download inside the
-build fails with `invalid peer certificate: UnknownIssuer`. Point `TXCAT_CA_BUNDLE` at a
-PEM bundle that includes the proxy's root CA. It is passed as a BuildKit secret, only
-mounted during `uv sync`, and never copied into the image or the repo:
-
-```bash
-TXCAT_CA_BUNDLE=/path/to/ca-bundle.pem docker compose build api
-```
+FastAPI service (`txcat.api`); the review queue lives in Postgres. Locally the API loads
+`txcat-categorizer@champion` from the MLflow registry (review threshold stored as a
+version tag). In Docker it serves the copy exported to `./models/champion` (`MODEL_URI`,
+`uv run txcat export-model`), because the local MLflow store records absolute host paths
+that don't exist inside a container.
 
 | Endpoint | What it does |
 |---|---|
@@ -206,6 +274,8 @@ TXCAT_CA_BUNDLE=/path/to/ca-bundle.pem docker compose build api
 | `GET /review?status=pending` | Review queue, oldest first (`pending`, `reviewed` or `all`) |
 | `POST /review/{id}` | Save the correct category. Reviewed rows are labelled training data for the next model |
 | `GET /accounts/{id}/insights` | Recurring payments, monthly spend by category and recent anomalies, computed from the account's stored transactions |
+| `GET /accounts` | Accounts with stored transactions (the dashboard's account picker) |
+| `GET /model` | Served model, threshold, categories and the training-time model comparison |
 | `GET /health` | Served model name/version, threshold, database status |
 
 Example:

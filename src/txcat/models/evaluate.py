@@ -20,7 +20,7 @@ class SliceMetrics:
 def slice_metrics(y_true, y_pred) -> SliceMetrics:
     """Macro-F1 over the categories present in this slice's ground truth.
 
-    Restricting to present labels keeps a slice (e.g. Kaggle has 13 of 19 categories) from
+    Restricting to present labels keeps a slice (e.g. Kaggle has 12 of 19 categories) from
     being dragged down by categories it can't contain; a prediction into an absent
     category still counts against the recall of the true one.
     """

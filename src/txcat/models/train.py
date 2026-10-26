@@ -36,21 +36,12 @@ from txcat.models.evaluate import (
     threshold_report,
 )
 from txcat.models.features import model_frame, tfidf_features
+from txcat.models.serialization import SKOPS_TRUSTED_TYPES
 from txcat.models.split import split_bounds, time_split
 
 EXPERIMENT = "txcat-categorization"
 REGISTERED_MODEL = "txcat-categorizer"
 TARGET_ACCURACY = 0.97  # auto-accepted predictions must be at least this accurate
-# MLflow 3 saves sklearn models with skops, which only loads allow-listed types.
-SKOPS_TRUSTED_TYPES = [
-    "txcat.models.baseline.RuleBaseline",
-    "txcat.models.embeddings.EmbeddingEncoder",
-    "txcat.models.features.direction_features",
-    "txcat.models.features._direction_names",
-    "lightgbm.sklearn.LGBMClassifier",
-    "lightgbm.basic.Booster",
-    "collections.OrderedDict",
-]
 
 
 @dataclass(frozen=True)
