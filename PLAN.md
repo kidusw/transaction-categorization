@@ -78,11 +78,16 @@ metrics, synthetic data labelled synthetic, secrets/data git-ignored).
 - No auth yet: an API-key header is planned before any public deployment
 - **Exit criteria:** API tests with `TestClient`; OpenAPI docs render.
 
-## Phase 6 — Ship
+## Phase 6 — Ship ✅
 
 - [x] Streamlit dashboard (insights, try-it/upload, review queue, model page), API-only client
 - [x] README with architecture diagram, results table, how to run, screenshots
 - [x] MODEL_CARD.md (data, metrics, limitations, synthetic-data disclosure)
-- [ ] Dockerfile + `docker compose up` brings up db, api, dashboard, mlflow
+- [x] Dockerfile + `docker compose up` brings up db, bootstrap (data + train + export), api
+      and dashboard. MLflow runs inside bootstrap (SQLite store) rather than as a server;
+      the API serves the exported skops model, so its image needs no MLflow
+- [x] Verified from a fresh `git clone`: `docker compose up` → dashboard works end-to-end
+      (synthetic data only without a Kaggle token). Images: api 871 MB (was 2.45 GB),
+      dashboard 861 MB, bootstrap 1.48 GB
 - **Exit criteria:** fresh clone → `docker compose up` → dashboard works end-to-end;
   CI green.

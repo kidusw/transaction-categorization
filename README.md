@@ -66,8 +66,10 @@ MLflow → export the model to `./models/champion`), then the API and the dashbo
 - API docs: <http://localhost:8000/docs>
 
 Each bootstrap step is skipped when its output already exists, so later `up`s start in
-seconds. Set `KAGGLE_API_TOKEN` in your shell first to include the Kaggle data; without
-it, only the synthetic data is used.
+seconds. Set `KAGGLE_API_TOKEN` in your shell first to include the Kaggle data. Without
+it, only the synthetic data is used, so the model has no real-format test slice and the
+Model page shows synthetic and unseen-text scores only. The first bootstrap takes about
+5 minutes on a laptop.
 
 On a network that intercepts HTTPS (a corporate proxy), the dependency download inside
 the build fails with `invalid peer certificate: UnknownIssuer`. Point `TXCAT_CA_BUNDLE`
