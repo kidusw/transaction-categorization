@@ -1,4 +1,4 @@
-"""Relational schema: accounts, categories and transactions."""
+"""Relational schema: accounts, categories, transactions and the review queue."""
 
 from datetime import date, datetime
 from decimal import Decimal
@@ -32,6 +32,8 @@ NAMING_CONVENTION = {
 DATA_SOURCES = ("kaggle", "synthetic", "user")
 # How a transaction's category was assigned.
 CATEGORY_SOURCES = ("label", "rule", "model", "review")
+# Review-queue item lifecycle.
+REVIEW_STATUSES = ("pending", "reviewed")
 
 
 class Base(DeclarativeBase):
@@ -96,3 +98,35 @@ class Transaction(Base):
 
     account: Mapped[Account] = relationship(back_populates="transactions")
     category: Mapped[Category | None] = relationship()
+
+
+class ReviewItem(Base):
+    """A low-confidence prediction waiting for (or given) a human label.
+
+    Self-contained on purpose: /categorize can be called for transactions that aren't
+    stored, so the item keeps the inputs it was predicted from. Reviewed items are labelled
+    training data for the next model (`source='user'` when exported).
+    """
+
+    __tablename__ = "review_queue"
+    __table_args__ = (
+        CheckConstraint("status IN ('pending', 'reviewed')", name="status_valid"),
+        CheckConstraint("confidence >= 0 AND confidence <= 1", name="confidence_range"),
+        Index("ix_review_queue_status_created", "status", "created_at"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    account_external_id: Mapped[str | None] = mapped_column(String(64))
+    txn_date: Mapped[date | None] = mapped_column(Date)
+    description: Mapped[str] = mapped_column(Text)
+    description_clean: Mapped[str] = mapped_column(Text)
+    amount: Mapped[Decimal | None] = mapped_column(Numeric(14, 2))
+    currency: Mapped[str | None] = mapped_column(String(3))
+    merchant: Mapped[str | None] = mapped_column(String(128))
+    predicted_category: Mapped[str] = mapped_column(String(64))
+    confidence: Mapped[float] = mapped_column(Float)
+    model_version: Mapped[str] = mapped_column(String(64))
+    status: Mapped[str] = mapped_column(String(16), default="pending")
+    reviewed_category: Mapped[str | None] = mapped_column(String(64))
+    reviewed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

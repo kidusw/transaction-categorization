@@ -129,6 +129,27 @@ def train(
         typer.echo(f"wrote {report}")
 
 
+@app.command("export-model")
+def export_model(
+    out: Annotated[Path, typer.Option(help="Directory to write the model to.")] = Path(
+        "models/champion"
+    ),
+    model_uri: Annotated[
+        str | None, typer.Option(help="Registry URI. Default: MODEL_URI setting.")
+    ] = None,
+) -> None:
+    """Copy the served model out of the MLflow registry into a portable directory."""
+    from txcat.api.predictor import export_predictor
+    from txcat.config import get_settings
+
+    settings = get_settings()
+    uri = model_uri or settings.model_uri
+    if out.exists():
+        raise typer.BadParameter(f"{out} already exists; remove it first")
+    export_predictor(uri, out, settings.mlflow_tracking_uri)
+    typer.echo(f"exported {uri} -> {out}")
+
+
 @insights_app.command("show")
 def insights_show(
     account_id: Annotated[str, typer.Argument(help="Account id, e.g. SYN-0001.")],

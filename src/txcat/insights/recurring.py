@@ -86,7 +86,7 @@ def detect_recurring(df: pd.DataFrame, config: RecurringConfig | None = None) ->
                 "occurrences": len(group),
                 "median_gap_days": median_gap,
                 "on_schedule": on_schedule,
-                "typical_amount": float(np.median(amounts)),
+                "typical_amount": round(float(np.median(amounts)), 2),
                 "amount_spread": spread,
                 "first_seen": group["date"].min(),
                 "last_seen": last,

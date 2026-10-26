@@ -13,6 +13,8 @@ class Settings(BaseSettings):
     test_database_url: str | None = None
     kaggle_api_token: SecretStr | None = None
     mlflow_tracking_uri: str = "sqlite:///mlflow.db"
+    # Model the API serves: a registry URI, or a directory written by `txcat export-model`.
+    model_uri: str = "models:/txcat-categorizer@champion"
 
 
 @lru_cache

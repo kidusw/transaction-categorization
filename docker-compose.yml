@@ -16,5 +16,28 @@ services:
       timeout: 3s
       retries: 10
 
+  api:
+    build:
+      context: .
+      secrets: [ca_bundle]
+    environment:
+      DATABASE_URL: postgresql+psycopg://txcat:txcat@db:5432/txcat
+      # Exported with `uv run txcat export-model` (writes ./models/champion)
+      MODEL_URI: /app/models/champion
+    volumes:
+      - ./models:/app/models:ro
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+
 volumes:
   pgdata:
+
+secrets:
+  # Optional extra CA bundle for TLS-intercepting networks, e.g.
+  #   TXCAT_CA_BUNDLE=C:/path/to/corporate-bundle.pem docker compose build api
+  # The default is an empty file, which the Dockerfile ignores.
+  ca_bundle:
+    file: ${TXCAT_CA_BUNDLE:-./docker/no-extra-ca.pem}

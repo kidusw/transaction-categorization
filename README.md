@@ -4,7 +4,7 @@ End-to-end ML project: categorize bank transactions from their descriptions (Eng
 Ethiopian-style mixed Amharic/English), then derive insights such as recurring payments,
 monthly spend by category and anomalies. See [PLAN.md](PLAN.md) for the phased roadmap.
 
-> Work in progress: Phases 1–4 done (ingestion, data, models, insights). Next: API.
+> Work in progress: Phases 1–5 done (ingestion, data, models, insights, API). Next: dashboard + ship.
 
 ## Quickstart
 
@@ -171,3 +171,73 @@ settings are tuned on the dev accounts (odd ids) and reported on the held-out ac
   discretionary spend (F1 0.21 vs 0.17). The robust z-score is simpler and explainable
   ("5.2× your usual amount at this merchant"), so it is the default.
 - Only 85 injected anomalies are in the held-out accounts, so these rates are rough.
+
+## API (Phase 5)
+
+FastAPI service (`txcat.api`). It loads `txcat-categorizer@champion` from the MLflow
+registry, with the review threshold stored as a version tag, and stores the review queue
+in Postgres.
+
+```bash
+uv run alembic upgrade head                      # adds the review_queue table
+uv run uvicorn txcat.api.app:app --reload        # http://127.0.0.1:8000/docs
+```
+
+Or in Docker, serving a portable copy of the model (the local MLflow store records
+absolute host paths, which don't exist inside a container):
+
+```bash
+uv run txcat export-model                        # registry -> ./models/champion (git-ignored)
+docker compose up --build api                    # db + api on http://localhost:8000
+```
+
+On a network that intercepts HTTPS (corporate proxy), the dependency download inside the
+build fails with `invalid peer certificate: UnknownIssuer`. Point `TXCAT_CA_BUNDLE` at a
+PEM bundle that includes the proxy's root CA. It is passed as a BuildKit secret, only
+mounted during `uv sync`, and never copied into the image or the repo:
+
+```bash
+TXCAT_CA_BUNDLE=/path/to/ca-bundle.pem docker compose build api
+```
+
+| Endpoint | What it does |
+|---|---|
+| `POST /categorize` | Batch of up to 1,000 transactions → category, confidence, merchant. Rows below the threshold are queued for review (`review_id`) |
+| `GET /review?status=pending` | Review queue, oldest first (`pending`, `reviewed` or `all`) |
+| `POST /review/{id}` | Save the correct category. Reviewed rows are labelled training data for the next model |
+| `GET /accounts/{id}/insights` | Recurring payments, monthly spend by category and recent anomalies, computed from the account's stored transactions |
+| `GET /health` | Served model name/version, threshold, database status |
+
+Example:
+
+```bash
+curl -s -X POST localhost:8000/categorize -H 'content-type: application/json' -d '{
+  "transactions": [
+    {"description": "TELEBIRR AIRTIME RECHARGE FT24123ABCD", "amount": -100},
+    {"description": "xyz qq 77", "amount": -40}
+  ]}'
+```
+
+```json
+{
+  "model_version": "txcat-categorizer/2",
+  "threshold": 0.418,
+  "predictions": [
+    {"description_clean": "telebirr airtime recharge", "category": "Telecom & Airtime",
+     "confidence": 0.9997, "merchant": "telebirr Airtime", "needs_review": false, "review_id": null},
+    {"description_clean": "xyz qq 77", "category": "Dining & Coffee",
+     "confidence": 0.1297, "merchant": null, "needs_review": true, "review_id": 1}
+  ]
+}
+```
+
+```bash
+curl -s localhost:8000/review                                   # the queued row
+curl -s -X POST localhost:8000/review/1 -H 'content-type: application/json' \
+     -d '{"category": "Shopping"}'                              # correct it
+curl -s "localhost:8000/accounts/SYN-0003/insights?months=3"    # insights
+```
+
+> **No authentication yet.** This is a local portfolio service. An API-key header
+> (e.g. `X-API-Key`, checked as a FastAPI dependency) is planned before any public
+> deployment.

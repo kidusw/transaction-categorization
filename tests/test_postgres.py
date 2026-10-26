@@ -37,7 +37,7 @@ def migrated(pg_url):
 def test_migration_creates_tables(migrated):
     tables = set(inspect(migrated).get_table_names())
 
-    assert {"accounts", "categories", "transactions", "alembic_version"} <= tables
+    assert {"accounts", "categories", "transactions", "review_queue", "alembic_version"} <= tables
 
 
 def test_ingest_into_postgres_is_idempotent(migrated, sample_df):

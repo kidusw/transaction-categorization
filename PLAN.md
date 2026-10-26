@@ -67,12 +67,15 @@ metrics, synthetic data labelled synthetic, secrets/data git-ignored).
   amount spread hides 6-12x spikes. See README.
 - **Exit criteria:** unit tests with hand-built histories for each detector.
 
-## Phase 5 — API (FastAPI)
+## Phase 5 — API (FastAPI) ✅
 
-- [ ] `POST /categorize` (batch) returns category + confidence
-- [ ] `GET /accounts/{id}/insights`
-- [ ] Predictions below a confidence threshold go to a `review_queue` table;
-      `GET /review-queue`, `POST /review-queue/{id}` to accept/correct labels
+- [x] `POST /categorize` (batch, up to 1000) returns category + confidence + merchant
+- [x] `GET /accounts/{id}/insights` (recurring, monthly spend, anomalies from Postgres)
+- [x] Predictions below the Phase 3 threshold go to a `review_queue` table (migration
+      0002); `GET /review`, `POST /review/{id}` saves the corrected label for retraining
+- [x] `GET /health` reports the served model version (`txcat-categorizer@champion`)
+- [x] `api` service in docker-compose, serving a model exported with `txcat export-model`
+- No auth yet: an API-key header is planned before any public deployment
 - **Exit criteria:** API tests with `TestClient`; OpenAPI docs render.
 
 ## Phase 6 — Ship
